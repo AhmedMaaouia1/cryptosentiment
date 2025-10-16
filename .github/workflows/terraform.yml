@@ -1,0 +1,45 @@
+name: Terraform AWS Deployment
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  id-token: write       # Nécessaire pour OIDC
+  contents: read        # Nécessaire pour lire le repo
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials via OIDC
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::834473887114:role/github-actions-role
+          aws-region: eu-west-3
+
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      # Terraform init
+      - name: Terraform Init
+        run: terraform -chdir=infrastructure/terraform init
+
+      # Terraform plan
+      - name: Terraform Plan
+        run: terraform -chdir=infrastructure/terraform plan
+
+      # Terraform apply (auto-approve)
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform -chdir=infrastructure/terraform apply -auto-approve
