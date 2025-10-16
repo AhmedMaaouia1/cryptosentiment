@@ -1,0 +1,8 @@
+apache-airflow-providers-amazon
+apache-airflow-providers-http
+apache-airflow-providers-docker
+boto3
+requests
+pandas
+pyarrow
+great-expectations
