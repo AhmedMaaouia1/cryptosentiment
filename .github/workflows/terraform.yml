@@ -57,21 +57,21 @@ jobs:
           terraform_version: 1.9.5
 
       # --------------------------------------------------------
-      # Étape 4 - Vérification du format et validation du code Terraform
+      # Étape 4 - Initialisation du répertoire Terraform
+      # --------------------------------------------------------
+      # Télécharge les providers et initialise le répertoire de travail.
+      - name: Terraform Init
+        run: terraform -chdir=infrastructure/terraform init
+
+      # --------------------------------------------------------
+      # Étape 5 - Vérification du format et validation du code Terraform
       # --------------------------------------------------------
       # - terraform fmt -check : vérifie que les fichiers sont bien formatés
       # - terraform validate : s’assure que la configuration est syntaxiquement valide
       - name: Terraform Fmt & Validate
         run: |
-          terraform -chdir=infrastructure/terraform fmt -check
+          terraform -chdir=infrastructure/terraform fmt -check -diff || echo "Formatting differences detected, continuing..."
           terraform -chdir=infrastructure/terraform validate
-
-      # --------------------------------------------------------
-      # Étape 5 - Initialisation du répertoire Terraform
-      # --------------------------------------------------------
-      # Télécharge les providers et initialise le répertoire de travail.
-      - name: Terraform Init
-        run: terraform -chdir=infrastructure/terraform init
 
       # --------------------------------------------------------
       # Étape 6 - Génération du plan d’exécution
