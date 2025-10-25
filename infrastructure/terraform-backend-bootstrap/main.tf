@@ -69,10 +69,11 @@ data "aws_iam_role" "gha_oidc" {
 
 resource "aws_iam_policy" "tf_backend" {
   name        = "${var.project_prefix}-tf-backend-policy"
-  description = "Allow GitHub Actions to access Terraform remote state (S3 + DDB)"
+  description = "Allow GitHub Actions to access Terraform remote state (S3 + DDB + IAM read)"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      # ---- S3 state access ----
       {
         Sid      = "ListStateBucketWithPrefix"
         Effect   = "Allow"
@@ -90,15 +91,33 @@ resource "aws_iam_policy" "tf_backend" {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Resource = "arn:aws:s3:::${local.state_bucket_name}/envs/dev/*"
       },
+      # ---- DynamoDB lock table ----
       {
         Sid      = "DDBStateLockCRUD"
         Effect   = "Allow"
         Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
         Resource = "arn:aws:dynamodb:${var.aws_region}:${local.account_id}:table/${aws_dynamodb_table.locks.name}"
+      },
+      # ---- IAM minimal read/attach ----
+      {
+        Sid    = "IAMPolicyReadAttach"
+        Effect = "Allow"
+        Action = [
+          "iam:GetPolicy",
+          "iam:GetRole",
+          "iam:ListAttachedRolePolicies",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy"
+        ]
+        Resource = [
+          "arn:aws:iam::${local.account_id}:policy/${var.project_prefix}-${var.environment}-app-minimal",
+          "arn:aws:iam::${local.account_id}:role/github-actions-role"
+        ]
       }
     ]
   })
 }
+
 
 resource "aws_iam_role_policy_attachment" "gha_oidc_backend_attach" {
   role       = data.aws_iam_role.gha_oidc.name
