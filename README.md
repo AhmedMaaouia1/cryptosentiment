@@ -22,7 +22,7 @@ de la collecte brute à la visualisation (Airflow, AWS, Streamlit/React).
 
 ## Architecture
 
-![Architecture Diagram](infrastructure/diagrams/architecture.png)
+![Architecture Diagram](Architecture.png)
 
 
 
