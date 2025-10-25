@@ -1,3 +1,6 @@
+# --- Get current AWS account information ---
+data "aws_caller_identity" "current" {}
+
 locals {
   account_id     = data.aws_caller_identity.current.account_id
   bucket_name    = "${var.project_prefix}-${var.environment}-${local.account_id}-datalake"

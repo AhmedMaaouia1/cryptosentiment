@@ -6,18 +6,12 @@ terraform {
       version = "~> 5.0"
     }
   }
-  # ⚠️ Backend local pour l’instant (on passera en S3+DynamoDB ensuite)
-}
 
-provider "aws" {
-  region = var.aws_region
-  default_tags {
-    tags = {
-      Project     = "CryptoSentiment"
-      Environment = var.environment
-      ManagedBy   = "Terraform"
-    }
+  backend "s3" {
+    bucket         = "cryptosentiment-tfstates-834473887114"
+    key            = "envs/dev/terraform.tfstate"
+    region         = "eu-west-3"
+    dynamodb_table = "cryptosentiment-tf-locks"
+    encrypt        = true
   }
 }
-
-data "aws_caller_identity" "current" {}
