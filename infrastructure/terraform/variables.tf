@@ -20,7 +20,7 @@ variable "aws_region" {
 variable "ddb_billing_mode" {
   description = "Mode de facturation DDB (PROVISIONED|PAY_PER_REQUEST)"
   type        = string
-  default     = "PROVISIONED"
+  default     = "PAY_PER_REQUEST"
 }
 
 variable "ddb_read_capacity" {

@@ -16,9 +16,11 @@ airflow_home/
 
 # Terraform
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
 .terraform/
 .terraform.lock.hcl
+
+
 
 # IDE
 .vscode/

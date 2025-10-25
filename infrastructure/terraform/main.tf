@@ -60,9 +60,6 @@ resource "aws_dynamodb_table" "timeseries" {
   range_key    = "ts"
   billing_mode = var.ddb_billing_mode
 
-  # ces attributs seulement si PROVISIONED
-  read_capacity  = var.ddb_billing_mode == "PROVISIONED" ? var.ddb_read_capacity : null
-  write_capacity = var.ddb_billing_mode == "PROVISIONED" ? var.ddb_write_capacity : null
 
   attribute {
     name = "asset"
