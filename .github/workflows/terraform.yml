@@ -89,7 +89,7 @@ jobs:
       # toute demande de confirmation interactive.
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        run: terraform -chdir=infrastructure/terraform apply -auto-approve -var="attach_iam_locally=false" tfplan
+        run: terraform -chdir=infrastructure/terraform apply -auto-approve tfplan
 
       # --------------------------------------------------------
       # Étape 8 - Affichage des outputs Terraform
