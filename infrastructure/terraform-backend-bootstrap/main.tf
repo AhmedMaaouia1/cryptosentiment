@@ -103,16 +103,19 @@ resource "aws_iam_policy" "tf_backend" {
         Sid    = "IAMPolicyReadAttach"
         Effect = "Allow"
         Action = [
+          "iam:GetUser",
           "iam:GetPolicy",
-          "iam:GetPolicyVersion", # 👈 ajoute cette ligne !
+          "iam:GetPolicyVersion",
           "iam:GetRole",
           "iam:ListAttachedRolePolicies",
           "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy"
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedUserPolicies"
         ]
         Resource = [
           "arn:aws:iam::${local.account_id}:policy/${var.project_prefix}-${var.environment}-app-minimal",
-          "arn:aws:iam::${local.account_id}:role/github-actions-role"
+          "arn:aws:iam::${local.account_id}:role/github-actions-role",
+          "arn:aws:iam::${local.account_id}:user/airflow-user"
         ]
       }
     ]
