@@ -104,6 +104,7 @@ resource "aws_iam_policy" "tf_backend" {
         Effect = "Allow"
         Action = [
           "iam:GetPolicy",
+          "iam:GetPolicyVersion", # 👈 ajoute cette ligne !
           "iam:GetRole",
           "iam:ListAttachedRolePolicies",
           "iam:AttachRolePolicy",
