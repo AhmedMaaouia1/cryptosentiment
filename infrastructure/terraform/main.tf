@@ -52,7 +52,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "datalake" {
 
 # -------------------------
 # DYNAMODB TIMESERIES
-# PK = asset (S), SK = ts (N), TTL = ttl (N, epoch)
 # -------------------------
 resource "aws_dynamodb_table" "timeseries" {
   name         = local.ddb_table_name
@@ -60,15 +59,14 @@ resource "aws_dynamodb_table" "timeseries" {
   range_key    = "ts"
   billing_mode = var.ddb_billing_mode
 
-
   attribute {
     name = "asset"
-    type = "S" # ex: "BTC"
+    type = "S"
   }
 
   attribute {
     name = "ts"
-    type = "N" # ex: 1697500000
+    type = "N"
   }
 
   ttl {
@@ -133,18 +131,19 @@ resource "aws_iam_policy" "app_minimal" {
   policy      = data.aws_iam_policy_document.app_minimal.json
 }
 
-# --- Attachement au user airflow-user (optionnel) ---
 data "aws_iam_user" "airflow" {
-  count     = var.attach_to_airflow_user ? 1 : 0
-  user_name = var.airflow_user_name
+  count     = var.attach_iam_locally ? 1 : 0
+  user_name = "airflow-user"
 }
 
 resource "aws_iam_user_policy_attachment" "airflow_attach" {
-  count      = var.attach_iam_locally ? 1 : 0
-  user       = data.aws_iam_user.airflow.user_name
-  policy_arn = aws_iam_policy.app_minimal.arn
-}
+  count = var.attach_iam_locally ? 1 : 0
 
+  user       = data.aws_iam_user.airflow[0].user_name
+  policy_arn = aws_iam_policy.app_minimal.arn
+
+  depends_on = [aws_iam_policy.app_minimal]
+}
 
 # --- Attachement au rôle OIDC GitHub Actions (optionnel) ---
 data "aws_iam_role" "gh_oidc" {
@@ -153,7 +152,10 @@ data "aws_iam_role" "gh_oidc" {
 }
 
 resource "aws_iam_role_policy_attachment" "gha_attach" {
-  count      = var.attach_to_github_actions_role ? 1 : 0
+  count = var.attach_to_github_actions_role ? 1 : 0
+
   role       = data.aws_iam_role.gh_oidc[0].name
   policy_arn = aws_iam_policy.app_minimal.arn
+
+  depends_on = [aws_iam_policy.app_minimal]
 }
