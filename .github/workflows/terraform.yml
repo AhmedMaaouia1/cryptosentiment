@@ -1,45 +1,100 @@
+# ============================================================
+#  Terraform AWS Deployment Workflow
+#  ------------------------------------------------------------
+#  Ce workflow automatise le déploiement de l’infrastructure AWS
+#  via Terraform, en utilisant l’authentification OIDC (sans clés)
+#  et le rôle IAM github-actions-role configuré dans AWS.
+# ============================================================
+
 name: Terraform AWS Deployment
 
 on:
+  # Déclenchement automatique sur :
+  #  - chaque push sur la branche principale
+  #  - chaque pull request (utile pour planifier sans appliquer)
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
 
 permissions:
-  id-token: write       # Nécessaire pour OIDC
-  contents: read        # Nécessaire pour lire le repo
+  # Autorise l’émission d’un jeton d’identité OIDC vers AWS
+  id-token: write
+  # Autorise la lecture du contenu du dépôt (checkout du code)
+  contents: read
 
 jobs:
   terraform:
+    # Utilise une machine Ubuntu GitHub hébergée
     runs-on: ubuntu-latest
 
     steps:
+      # --------------------------------------------------------
+      # Étape 1 - Clonage du dépôt GitHub dans la VM
+      # --------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Configure AWS credentials via OIDC
+      # --------------------------------------------------------
+      # Étape 2 - Authentification AWS via OIDC
+      # --------------------------------------------------------
+      # GitHub émet un jeton d'identité OIDC que AWS valide
+      # selon la trust policy du rôle IAM github-actions-role.
+      # Aucun secret ni clé d’accès statique n’est requis.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::834473887114:role/github-actions-role
           aws-region: eu-west-3
 
-      # Setup Terraform
+      # --------------------------------------------------------
+      # Étape 3 - Installation de Terraform
+      # --------------------------------------------------------
+      # Installe la version spécifiée de Terraform (stable et récente)
+      # dans l’environnement d’exécution GitHub.
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.5
 
-      # Terraform init
+      # --------------------------------------------------------
+      # Étape 4 - Vérification du format et validation du code Terraform
+      # --------------------------------------------------------
+      # - terraform fmt -check : vérifie que les fichiers sont bien formatés
+      # - terraform validate : s’assure que la configuration est syntaxiquement valide
+      - name: Terraform Fmt & Validate
+        run: |
+          terraform -chdir=infrastructure/terraform fmt -check
+          terraform -chdir=infrastructure/terraform validate
+
+      # --------------------------------------------------------
+      # Étape 5 - Initialisation du répertoire Terraform
+      # --------------------------------------------------------
+      # Télécharge les providers et initialise le répertoire de travail.
       - name: Terraform Init
         run: terraform -chdir=infrastructure/terraform init
 
-      # Terraform plan
+      # --------------------------------------------------------
+      # Étape 6 - Génération du plan d’exécution
+      # --------------------------------------------------------
+      # Calcule les modifications nécessaires pour aligner l’état
+      # de l’infrastructure avec le code (sans appliquer les changements).
       - name: Terraform Plan
-        run: terraform -chdir=infrastructure/terraform plan
+        run: terraform -chdir=infrastructure/terraform plan -out=tfplan
 
-      # Terraform apply (auto-approve)
+      # --------------------------------------------------------
+      # Étape 7 - Application du plan Terraform
+      # --------------------------------------------------------
+      # Applique les changements uniquement si le workflow est exécuté
+      # sur la branche principale (main). Le flag -auto-approve évite
+      # toute demande de confirmation interactive.
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        run: terraform -chdir=infrastructure/terraform apply -auto-approve
+        run: terraform -chdir=infrastructure/terraform apply -auto-approve tfplan
+
+      # --------------------------------------------------------
+      # Étape 8 - Affichage des outputs Terraform
+      # --------------------------------------------------------
+      # Affiche dans les logs les valeurs de sortie (bucket, table, topic).
+      - name: Terraform Output
+        if: github.ref == 'refs/heads/main'
+        run: terraform -chdir=infrastructure/terraform output
