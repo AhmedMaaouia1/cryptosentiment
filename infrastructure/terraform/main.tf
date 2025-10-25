@@ -140,10 +140,11 @@ data "aws_iam_user" "airflow" {
 }
 
 resource "aws_iam_user_policy_attachment" "airflow_attach" {
-  count      = var.attach_to_airflow_user ? 1 : 0
-  user       = data.aws_iam_user.airflow[0].user_name
+  count      = var.attach_iam_locally ? 1 : 0
+  user       = data.aws_iam_user.airflow.user_name
   policy_arn = aws_iam_policy.app_minimal.arn
 }
+
 
 # --- Attachement au rôle OIDC GitHub Actions (optionnel) ---
 data "aws_iam_role" "gh_oidc" {

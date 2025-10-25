@@ -59,3 +59,9 @@ variable "github_actions_role_name" {
   type        = string
   default     = "github-actions-role"
 }
+
+variable "attach_iam_locally" {
+  description = "Attach IAM policies only in local context"
+  type        = bool
+  default     = true
+}

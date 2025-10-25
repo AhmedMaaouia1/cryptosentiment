@@ -79,7 +79,7 @@ jobs:
       # Calcule les modifications nécessaires pour aligner l’état
       # de l’infrastructure avec le code (sans appliquer les changements).
       - name: Terraform Plan
-        run: terraform -chdir=infrastructure/terraform plan -out=tfplan
+        run: terraform -chdir=infrastructure/terraform plan -var="attach_iam_locally=false" -out=tfplan
 
       # --------------------------------------------------------
       # Étape 7 - Application du plan Terraform
@@ -89,7 +89,7 @@ jobs:
       # toute demande de confirmation interactive.
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
-        run: terraform -chdir=infrastructure/terraform apply -auto-approve tfplan
+        run: terraform -chdir=infrastructure/terraform apply -auto-approve -var="attach_iam_locally=false" tfplan
 
       # --------------------------------------------------------
       # Étape 8 - Affichage des outputs Terraform
