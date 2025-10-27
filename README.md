@@ -158,4 +158,4 @@ Projet réalisé par **MAAOUIA Ahmed**
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vscode/vscode-original.svg" width="40" height="40"/>
 </p>
 
-> “From ingestion to visualization — automating every step of the DataOps lifecycle.”
+> <p align="center">“From ingestion to visualization — automating every step of the DataOps lifecycle.”</p>
