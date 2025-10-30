@@ -68,7 +68,7 @@ data "aws_iam_role" "gha_oidc" {
 }
 
 locals {
-  # Charger la policy JSON externe
+  # Charger le template JSON externe
   tf_backend_template = file("${path.module}/../policies/tf_backend.json")
 
   # Remplacer dynamiquement les variables à l'intérieur du JSON
