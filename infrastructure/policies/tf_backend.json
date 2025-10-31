@@ -1,0 +1,51 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListStateBucketWithPrefix",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": "arn:aws:s3:::${state_bucket_arn}",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": ["envs/dev/*"]
+        }
+      }
+    },
+    {
+      "Sid": "RWStateObject",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::${state_bucket_arn}/envs/dev/*"
+    },
+    {
+      "Sid": "DDBStateLockCRUD",
+      "Effect": "Allow",
+      "Action": ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"],
+      "Resource": "arn:aws:dynamodb:${aws_region}:${account_id}:table/${ddb_table_name}"
+    },
+    {
+      "Sid": "IAMPolicyReadAttach",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetUser",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:GetRole",
+        "iam:ListAttachedRolePolicies",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:ListAttachedUserPolicies",
+        "iam:AttachUserPolicy",
+        "iam:DetachUserPolicy",
+        "iam:TagPolicy",
+        "iam:UntagPolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::${account_id}:policy/${project_prefix}-${environment}-app-minimal",
+        "arn:aws:iam::${account_id}:role/github-actions-role",
+        "arn:aws:iam::${account_id}:user/airflow-user"
+      ]
+    }
+  ]
+}

@@ -67,60 +67,35 @@ data "aws_iam_role" "gha_oidc" {
   name = "github-actions-role"
 }
 
+locals {
+  # Charger la policy JSON externe
+  tf_backend_template = file("${path.module}/../policies/tf_backend.json")
+
+  # Remplacer dynamiquement les variables à l'intérieur du JSON
+  tf_backend_policy_rendered = replace(
+    replace(
+      replace(
+        replace(
+          replace(
+            local.tf_backend_template,
+            "$${state_bucket_arn}", "arn:aws:s3:::${local.state_bucket_name}"
+          ),
+          "$${ddb_table_name}", local.lock_table_name
+        ),
+        "$${account_id}", local.account_id
+      ),
+      "$${aws_region}", var.aws_region
+    ),
+    "$${project_prefix}", var.project_prefix
+  )
+}
+
 resource "aws_iam_policy" "tf_backend" {
   name        = "${var.project_prefix}-tf-backend-policy"
   description = "Allow GitHub Actions to access Terraform remote state (S3 + DDB + IAM read)"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      # ---- S3 state access ----
-      {
-        Sid      = "ListStateBucketWithPrefix"
-        Effect   = "Allow"
-        Action   = ["s3:ListBucket"]
-        Resource = "arn:aws:s3:::${local.state_bucket_name}"
-        Condition = {
-          StringLike = {
-            "s3:prefix" = ["envs/dev/*"]
-          }
-        }
-      },
-      {
-        Sid      = "RWStateObject"
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-        Resource = "arn:aws:s3:::${local.state_bucket_name}/envs/dev/*"
-      },
-      # ---- DynamoDB lock table ----
-      {
-        Sid      = "DDBStateLockCRUD"
-        Effect   = "Allow"
-        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
-        Resource = "arn:aws:dynamodb:${var.aws_region}:${local.account_id}:table/${aws_dynamodb_table.locks.name}"
-      },
-      # ---- IAM minimal read/attach ----
-      {
-        Sid    = "IAMPolicyReadAttach"
-        Effect = "Allow"
-        Action = [
-          "iam:GetUser",
-          "iam:GetPolicy",
-          "iam:GetPolicyVersion",
-          "iam:GetRole",
-          "iam:ListAttachedRolePolicies",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:ListAttachedUserPolicies"
-        ]
-        Resource = [
-          "arn:aws:iam::${local.account_id}:policy/${var.project_prefix}-${var.environment}-app-minimal",
-          "arn:aws:iam::${local.account_id}:role/github-actions-role",
-          "arn:aws:iam::${local.account_id}:user/airflow-user"
-        ]
-      }
-    ]
-  })
+  policy      = local.tf_backend_policy_rendered
 }
+
 
 
 resource "aws_iam_role_policy_attachment" "gha_oidc_backend_attach" {
