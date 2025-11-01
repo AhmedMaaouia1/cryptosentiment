@@ -68,27 +68,18 @@ data "aws_iam_role" "gha_oidc" {
 }
 
 locals {
-  # Charger le template JSON externe
   tf_backend_template = file("${path.module}/../policies/tf_backend.json")
 
-  # Remplacer dynamiquement les variables à l'intérieur du JSON
-  tf_backend_policy_rendered = replace(
-    replace(
-      replace(
-        replace(
-          replace(
-            local.tf_backend_template,
-            "$${state_bucket_arn}", "arn:aws:s3:::${local.state_bucket_name}"
-          ),
-          "$${ddb_table_name}", local.lock_table_name
-        ),
-        "$${account_id}", local.account_id
-      ),
-      "$${aws_region}", var.aws_region
-    ),
-    "$${project_prefix}", var.project_prefix
-  )
+  tf_backend_policy_rendered = templatefile("${path.module}/../policies/tf_backend.json", {
+    state_bucket_name = local.state_bucket_name
+    lock_table_name   = local.lock_table_name
+    account_id        = local.account_id
+    aws_region        = var.aws_region
+    project_prefix    = var.project_prefix
+    environment       = var.environment
+  })
 }
+
 
 resource "aws_iam_policy" "tf_backend" {
   name        = "${var.project_prefix}-tf-backend-policy"
