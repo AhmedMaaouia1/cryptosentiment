@@ -5,7 +5,7 @@
       "Sid": "ListStateBucketWithPrefix",
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
-      "Resource": "arn:aws:s3:::${state_bucket_arn}",
+      "Resource": "arn:aws:s3:::${state_bucket_name}",
       "Condition": {
         "StringLike": {
           "s3:prefix": ["envs/dev/*"]
@@ -16,13 +16,13 @@
       "Sid": "RWStateObject",
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
-      "Resource": "arn:aws:s3:::${state_bucket_arn}/envs/dev/*"
+      "Resource": "arn:aws:s3:::${state_bucket_name}/envs/dev/*"
     },
     {
       "Sid": "DDBStateLockCRUD",
       "Effect": "Allow",
       "Action": ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"],
-      "Resource": "arn:aws:dynamodb:${aws_region}:${account_id}:table/${ddb_table_name}"
+      "Resource": "arn:aws:dynamodb:${aws_region}:${account_id}:table/${lock_table_name}"
     },
     {
       "Sid": "IAMPolicyReadAttach",

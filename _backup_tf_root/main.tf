@@ -94,28 +94,44 @@ resource "aws_sns_topic" "alerts" {
 # ====================================================
 # IAM POLICY MINIMALE POUR L'APP (S3 + DDB + SNS)
 # ====================================================
-locals {
-  # On charge le contenu brut du JSON externe
-  app_policy_template = file("${path.module}/../policies/app_minimal.json")
+data "aws_iam_policy_document" "app_minimal" {
+  statement {
+    sid = "S3Access"
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ]
+    resources = [
+      aws_s3_bucket.datalake.arn,
+      "${aws_s3_bucket.datalake.arn}/*"
+    ]
+  }
 
-  # On remplace les variables dynamiques par les vrais ARNs
-  app_policy_rendered = replace(
-    replace(
-      replace(
-        local.app_policy_template,
-        "$${bucket_arn}", aws_s3_bucket.datalake.arn
-      ),
-      "$${dynamodb_arn}", aws_dynamodb_table.timeseries.arn
-    ),
-    "$${sns_arn}", aws_sns_topic.alerts.arn
-  )
+  statement {
+    sid = "DynamoDBAccess"
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:BatchWriteItem",
+      "dynamodb:UpdateItem",
+      "dynamodb:GetItem",
+      "dynamodb:Query"
+    ]
+    resources = [aws_dynamodb_table.timeseries.arn]
+  }
+
+  statement {
+    sid       = "SNSPublish"
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.alerts.arn]
+  }
 }
-
 
 resource "aws_iam_policy" "app_minimal" {
   name        = "${var.project_prefix}-${var.environment}-app-minimal"
   description = "Accès minimal S3/DDB/SNS pour CryptoSentiment"
-  policy      = local.app_policy_rendered
+  policy      = data.aws_iam_policy_document.app_minimal.json
 }
 
 data "aws_iam_user" "airflow" {
