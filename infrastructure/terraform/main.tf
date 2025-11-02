@@ -2,147 +2,88 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  account_id     = data.aws_caller_identity.current.account_id
-  bucket_name    = "${var.project_prefix}-${var.environment}-${local.account_id}-datalake"
-  ddb_table_name = "${var.project_prefix}-${var.environment}-timeseries"
-  sns_topic_name = "${var.project_prefix}-${var.environment}-alerts"
+  account_id = data.aws_caller_identity.current.account_id
 }
 
 # -------------------------
-# S3 DATALAKE (privé)
+# S3 DATALAKE (MODULE)
 # -------------------------
-resource "aws_s3_bucket" "datalake" {
-  bucket = local.bucket_name
-}
+module "s3_datalake" {
+  source = "../modules/s3_datalake"
 
-resource "aws_s3_bucket_public_access_block" "datalake" {
-  bucket                  = aws_s3_bucket.datalake.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
+  project_prefix                 = var.project_prefix
+  environment                    = var.environment
+  account_id                     = local.account_id
+  aws_region                     = var.aws_region
+  enable_versioning              = false
+  lifecycle_abort_multipart_days = 7
+  sse_algorithm                  = "AES256"
 
-resource "aws_s3_bucket_ownership_controls" "datalake" {
-  bucket = aws_s3_bucket.datalake.id
-  rule {
-    object_ownership = "BucketOwnerEnforced"
-  }
-}
-
-resource "aws_s3_bucket_server_side_encryption_configuration" "datalake" {
-  bucket = aws_s3_bucket.datalake.id
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "datalake" {
-  bucket = aws_s3_bucket.datalake.id
-  rule {
-    id     = "abort-multipart-after-7d"
-    status = "Enabled"
-
-    filter {}
-
-    abort_incomplete_multipart_upload {
-      days_after_initiation = 7
-    }
+  tags = {
+    Project = "CryptoSentiment"
   }
 }
 
 # -------------------------
-# DYNAMODB TIMESERIES
+# DYNAMODB TIMESERIES (MODULE)
 # -------------------------
-resource "aws_dynamodb_table" "timeseries" {
-  name         = local.ddb_table_name
-  hash_key     = "asset"
-  range_key    = "ts"
-  billing_mode = var.ddb_billing_mode
+module "dynamodb_timeseries" {
+  source = "../modules/dynamodb_timeseries"
 
-  attribute {
-    name = "asset"
-    type = "S"
+  project_prefix         = var.project_prefix
+  environment            = var.environment
+  billing_mode           = var.ddb_billing_mode
+  hash_key               = "asset"
+  range_key              = "ts"
+  ttl_enabled            = true
+  ttl_attribute_name     = "ttl"
+  point_in_time_recovery = false
+  deletion_protection    = false
+
+  tags = {
+    Project = "CryptoSentiment"
   }
-
-  attribute {
-    name = "ts"
-    type = "N"
-  }
-
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
-  }
-
-  point_in_time_recovery {
-    enabled = false
-  }
-
-  deletion_protection_enabled = false
 }
 
 # -------------------------
-# SNS ALERTS
+# SNS ALERTS (MODULE)
 # -------------------------
-resource "aws_sns_topic" "alerts" {
-  name = local.sns_topic_name
+module "sns_alerts" {
+  source = "../modules/sns_alerts"
+
+  project_prefix              = var.project_prefix
+  environment                 = var.environment
+  display_name                = "CryptoSentiment Alerts"
+  fifo_topic                  = false
+  content_based_deduplication = false
+
+  # Ajoutez vos emails/SMS ici si nécessaire
+  email_subscriptions = []
+  sms_subscriptions   = []
+
+  tags = {
+    Project = "CryptoSentiment"
+  }
 }
 
 # ====================================================
-# IAM POLICY MINIMALE POUR L'APP (S3 + DDB + SNS)
+# IAM POLICY MINIMALE (MODULE)
 # ====================================================
-locals {
-  # On charge le contenu brut du JSON externe
-  app_policy_template = file("${path.module}/../policies/app_minimal.json")
+module "iam_app_policy" {
+  source = "../modules/iam_app_policy"
 
-  # On remplace les variables dynamiques par les vrais ARNs
-  app_policy_rendered = replace(
-    replace(
-      replace(
-        local.app_policy_template,
-        "$${bucket_arn}", aws_s3_bucket.datalake.arn
-      ),
-      "$${dynamodb_arn}", aws_dynamodb_table.timeseries.arn
-    ),
-    "$${sns_arn}", aws_sns_topic.alerts.arn
-  )
-}
+  project_prefix                = var.project_prefix
+  environment                   = var.environment
+  policy_file_path              = "${path.module}/../policies/app_minimal.json"
+  s3_bucket_arn                 = module.s3_datalake.bucket_arn
+  dynamodb_table_arn            = module.dynamodb_timeseries.table_arn
+  sns_topic_arn                 = module.sns_alerts.topic_arn
+  attach_to_airflow_user        = var.attach_iam_locally
+  airflow_user_name             = "airflow-user"
+  attach_to_github_actions_role = var.attach_to_github_actions_role
+  github_actions_role_name      = var.github_actions_role_name
 
-
-resource "aws_iam_policy" "app_minimal" {
-  name        = "${var.project_prefix}-${var.environment}-app-minimal"
-  description = "Accès minimal S3/DDB/SNS pour CryptoSentiment"
-  policy      = local.app_policy_rendered
-}
-
-data "aws_iam_user" "airflow" {
-  count     = var.attach_iam_locally ? 1 : 0
-  user_name = "airflow-user"
-}
-
-resource "aws_iam_user_policy_attachment" "airflow_attach" {
-  count = var.attach_iam_locally ? 1 : 0
-
-  user       = data.aws_iam_user.airflow[0].user_name
-  policy_arn = aws_iam_policy.app_minimal.arn
-
-  depends_on = [aws_iam_policy.app_minimal]
-}
-
-# --- Attachement au rôle OIDC GitHub Actions (optionnel) ---
-data "aws_iam_role" "gh_oidc" {
-  count = var.attach_to_github_actions_role ? 1 : 0
-  name  = var.github_actions_role_name
-}
-
-resource "aws_iam_role_policy_attachment" "gha_attach" {
-  count = var.attach_to_github_actions_role ? 1 : 0
-
-  role       = data.aws_iam_role.gh_oidc[0].name
-  policy_arn = aws_iam_policy.app_minimal.arn
-
-  depends_on = [aws_iam_policy.app_minimal]
+  tags = {
+    Project = "CryptoSentiment"
+  }
 }

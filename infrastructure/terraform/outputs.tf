@@ -1,14 +1,14 @@
 output "s3_datalake_bucket_name" {
-  value       = aws_s3_bucket.datalake.bucket
+  value       = module.s3_datalake.bucket_name
   description = "Nom du bucket S3 datalake"
 }
 
 output "dynamodb_table_name" {
-  value       = aws_dynamodb_table.timeseries.name
+  value       = module.dynamodb_timeseries.table_name
   description = "Nom de la table DDB timeseries"
 }
 
 output "sns_topic_arn" {
-  value       = aws_sns_topic.alerts.arn
+  value       = module.sns_alerts.topic_arn
   description = "ARN du topic SNS alerts"
 }
