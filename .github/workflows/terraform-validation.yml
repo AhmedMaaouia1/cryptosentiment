@@ -58,6 +58,11 @@ jobs:
           terraform validate -no-color
           echo "Configuration is valid"
 
+      - name: Install tfsec
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          tfsec --version
+
       - name: Run tfsec Security Scan
         id: tfsec
         run: |
