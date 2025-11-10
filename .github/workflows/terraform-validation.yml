@@ -73,20 +73,26 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fmtStatus = '${{ steps.fmt.outcome }}' === 'success' ? 'PASSED' : 'FAILED';
+            const validateStatus = '${{ steps.validate.outcome }}' === 'success' ? 'PASSED' : 'FAILED';
+            const tfsecStatus = '${{ steps.tfsec.outcome }}' === 'success' ? 'PASSED' : 'ISSUES FOUND';
+            
+            const fmtError = '${{ steps.fmt.outcome }}' !== 'success' ? '**Format errors found.** Run `terraform fmt -recursive` locally.\n' : '';
+            const validateError = '${{ steps.validate.outcome }}' !== 'success' ? '**Validation errors found.** Check Terraform configuration.\n' : '';
+            const tfsecError = '${{ steps.tfsec.outcome }}' !== 'success' ? '**Security issues detected.** Review the Security tab for details.\n' : '';
+            
             const output = `
             ## Terraform Validation Results
 
             | Check | Status |
             |-------|--------|
-            | Format | ${{ steps.fmt.outcome == 'success' ? 'PASSED' : 'FAILED' }} |
-            | Validate | ${{ steps.validate.outcome == 'success' ? 'PASSED' : 'FAILED' }} |
-            | Security (tfsec) | ${{ steps.tfsec.outcome == 'success' ? 'PASSED' : 'ISSUES FOUND' }} |
+            | Format | ${fmtStatus} |
+            | Validate | ${validateStatus} |
+            | Security (tfsec) | ${tfsecStatus} |
 
             ### Actions Required
 
-            ${steps.fmt.outcome !== 'success' ? '**Format errors found.** Run `terraform fmt -recursive` locally.\n' : ''}
-            ${steps.validate.outcome !== 'success' ? '**Validation errors found.** Check Terraform configuration.\n' : ''}
-            ${steps.tfsec.outcome !== 'success' ? '**Security issues detected.** Review the Security tab for details.\n' : ''}
+            ${fmtError}${validateError}${tfsecError}
 
             ---
             *Workflow run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
