@@ -16,6 +16,11 @@ on:
 env:
   TF_VERSION: '1.8.0'
 
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
 jobs:
   terraform-checks:
     name: Terraform Quality & Security Checks
@@ -60,13 +65,15 @@ jobs:
           working_directory: infrastructure/terraform
           soft_fail: false
           format: sarif
+          sarif_file: tfsec-results.sarif
           config_file: .tfsec.yml
 
       - name: Upload tfsec results to GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: tfsec-results.sarif
+          sarif_file: infrastructure/terraform/tfsec-results.sarif
+          category: tfsec
 
       - name: Comment PR with results
         if: github.event_name == 'pull_request' && always()
@@ -133,3 +140,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: checkov-results.sarif
+          category: checkov
