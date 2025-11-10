@@ -76,11 +76,11 @@ jobs:
             const fmtStatus = '${{ steps.fmt.outcome }}' === 'success' ? 'PASSED' : 'FAILED';
             const validateStatus = '${{ steps.validate.outcome }}' === 'success' ? 'PASSED' : 'FAILED';
             const tfsecStatus = '${{ steps.tfsec.outcome }}' === 'success' ? 'PASSED' : 'ISSUES FOUND';
-            
+
             const fmtError = '${{ steps.fmt.outcome }}' !== 'success' ? '**Format errors found.** Run `terraform fmt -recursive` locally.\n' : '';
             const validateError = '${{ steps.validate.outcome }}' !== 'success' ? '**Validation errors found.** Check Terraform configuration.\n' : '';
             const tfsecError = '${{ steps.tfsec.outcome }}' !== 'success' ? '**Security issues detected.** Review the Security tab for details.\n' : '';
-            
+
             const output = `
             ## Terraform Validation Results
 
