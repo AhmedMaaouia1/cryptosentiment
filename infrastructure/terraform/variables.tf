@@ -11,7 +11,7 @@ variable "environment" {
 }
 
 variable "aws_region" {
-  description = "Région AWS"
+  description = "Région AWS du déploiement"
   type        = string
   default     = "eu-west-3"
 }
