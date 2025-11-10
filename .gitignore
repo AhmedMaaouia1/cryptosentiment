@@ -21,6 +21,14 @@ airflow_home/
 .terraform.lock.hcl
 crash.log
 terraform.tfvars
+*.tfplan
+tfplan
+*.backup
+
+# Security scan results
+tfsec-results.sarif
+checkov-results.sarif
+*.sarif
 
 
 # IDE

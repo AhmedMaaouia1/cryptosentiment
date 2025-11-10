@@ -9,7 +9,7 @@ locals {
 
   # Charger le template de policy et remplacer les variables
   policy_template = file(var.policy_file_path)
-  
+
   policy_rendered = replace(
     replace(
       replace(

@@ -1,0 +1,129 @@
+name: Terraform Validation & Security
+
+on:
+  pull_request:
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/terraform-validation.yml'
+  push:
+    branches:
+      - main
+      - feat/terraform-modularisation
+    paths:
+      - 'infrastructure/**'
+  workflow_dispatch:
+
+env:
+  TF_VERSION: '1.8.0'
+
+jobs:
+  terraform-checks:
+    name: Terraform Quality & Security Checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: infrastructure/terraform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: |
+          terraform fmt -check -recursive
+          echo "Code is properly formatted"
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init -backend=false
+          echo "Terraform initialized"
+
+      - name: Terraform Validate
+        id: validate
+        run: |
+          terraform validate -no-color
+          echo "Configuration is valid"
+
+      - name: Run tfsec Security Scan
+        id: tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: infrastructure/terraform
+          soft_fail: false
+          format: sarif
+          config_file: .tfsec.yml
+
+      - name: Upload tfsec results to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: tfsec-results.sarif
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `
+            ## Terraform Validation Results
+
+            | Check | Status |
+            |-------|--------|
+            | Format | ${{ steps.fmt.outcome == 'success' ? 'PASSED' : 'FAILED' }} |
+            | Validate | ${{ steps.validate.outcome == 'success' ? 'PASSED' : 'FAILED' }} |
+            | Security (tfsec) | ${{ steps.tfsec.outcome == 'success' ? 'PASSED' : 'ISSUES FOUND' }} |
+
+            ### Actions Required
+
+            ${steps.fmt.outcome !== 'success' ? '**Format errors found.** Run `terraform fmt -recursive` locally.\n' : ''}
+            ${steps.validate.outcome !== 'success' ? '**Validation errors found.** Check Terraform configuration.\n' : ''}
+            ${steps.tfsec.outcome !== 'success' ? '**Security issues detected.** Review the Security tab for details.\n' : ''}
+
+            ---
+            *Workflow run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail on critical errors
+        if: steps.fmt.outcome != 'success' || steps.validate.outcome != 'success' || steps.tfsec.outcome != 'success'
+        run: |
+          echo "::error::Terraform validation failed. Please fix the errors above."
+          exit 1
+
+  checkov-scan:
+    name: Checkov Policy Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: infrastructure/terraform
+          framework: terraform
+          soft_fail: true
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+
+      - name: Upload Checkov results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: checkov-results.sarif

@@ -25,10 +25,19 @@ resource "aws_dynamodb_table" "timeseries" {
     type = "N" # Number pour le timestamp
   }
 
+  # encryption at rest
+  server_side_encryption {
+    enabled     = true
+    kms_key_arn = null # Utilise la clé AWS par défaut
+  }
+
   # Configuration TTL pour expiration automatique
-  ttl {
-    attribute_name = var.ttl_attribute_name
-    enabled        = var.ttl_enabled
+  dynamic "ttl" {
+    for_each = var.ttl_enabled ? [1] : []
+    content {
+      enabled        = true
+      attribute_name = var.ttl_attribute_name
+    }
   }
 
   # Restauration point-in-time (backup continu)

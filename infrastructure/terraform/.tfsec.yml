@@ -1,0 +1,32 @@
+# tfsec configuration file
+# https://aquasecurity.github.io/tfsec/
+
+# Minimum severity level to report (CRITICAL, HIGH, MEDIUM, LOW)
+minimum_severity: HIGH
+
+# Exclude specific checks (use sparingly)
+exclude:
+  - aws-dynamodb-enable-recovery     # Point-in-time recovery coute cher
+  - aws-s3-enable-bucket-logging     # Logging S3 coute cher
+  - aws-s3-enable-versioning         # Versioning desactive volontairement en dev
+
+
+# Include specific checks only (overrides exclude)
+# include:
+#   - aws-s3-enable-bucket-encryption
+
+# Exclude specific directories
+exclude_paths:
+  - .terraform/
+  - .git/
+  - .terraform/
+  - terraform.tfstate*
+  - "**/.terraform/*"
+  - "**/terraform.tfstate*"
+
+# Custom checks directory
+# custom_check_dir: custom-checks/
+
+# Checks personnalises
+custom_checks:
+  enabled: true
