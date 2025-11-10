@@ -65,14 +65,14 @@ jobs:
           working_directory: infrastructure/terraform
           soft_fail: false
           format: sarif
-          sarif_file: tfsec-results.sarif
+          output: tfsec-results.sarif
           config_file: .tfsec.yml
 
       - name: Upload tfsec results to GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: infrastructure/terraform/tfsec-results.sarif
+          sarif_file: tfsec-results.sarif
           category: tfsec
 
       - name: Comment PR with results
