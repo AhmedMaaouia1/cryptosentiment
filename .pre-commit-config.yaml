@@ -1,31 +1,27 @@
-# Pre-commit hooks for Terraform
+# Pre-commit hooks for code quality
 # Installation: pip install pre-commit
 # Activation: pre-commit install
 # Usage: Runs automatically on git commit
+#
+# Note: Terraform hooks disabled due to Windows compatibility issues
+# Use test-terraform.ps1 for local Terraform validation instead
 
 repos:
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.88.0
-    hooks:
-      - id: terraform_fmt
-        name: Terraform Format
+  # DISABLED: Terraform hooks cause issues on Windows
+  # Use test-terraform.ps1 instead for local validation
+  # Terraform checks run automatically in GitHub Actions CI/CD
+  #
+  # - repo: https://github.com/antonbabenko/pre-commit-terraform
+  #   rev: v1.88.0
+  #   hooks:
+  #     - id: terraform_fmt
+  #     - id: terraform_validate
+  #     - id: terraform_tfsec
+  #     - id: terraform_docs
 
-      - id: terraform_validate
-        name: Terraform Validate
-
-      # Disabled: tfsec runs in CI/CD with .tfsec.yml config
-      # - id: terraform_tfsec
-      #   name: Terraform Security (tfsec)
-      #   args:
-      #     - --args=--config-file=.tfsec.yml
-      
-      # Disabled: terraform-docs not installed locally
-      # - id: terraform_docs
-      #   name: Generate Terraform docs
-      #   args:
-      #     - --args=--output-file=README.md
-      #     - --args=--output-mode=inject  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+  # Generic hooks (work well on all platforms)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
         name: Trim trailing whitespace

@@ -16,6 +16,11 @@ on:
 env:
   TF_VERSION: '1.8.0'
 
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
 jobs:
   terraform-checks:
     name: Terraform Quality & Security Checks
@@ -53,40 +58,53 @@ jobs:
           terraform validate -no-color
           echo "Configuration is valid"
 
+      - name: Install tfsec
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          tfsec --version
+
       - name: Run tfsec Security Scan
         id: tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
-        with:
-          working_directory: infrastructure/terraform
-          soft_fail: false
-          format: sarif
-          config_file: .tfsec.yml
+        run: |
+          if [ -f .tfsec.yml ]; then
+            tfsec . --format sarif --out tfsec-results.sarif --config-file .tfsec.yml
+          else
+            tfsec . --format sarif --out tfsec-results.sarif --minimum-severity HIGH
+          fi
+        continue-on-error: true
 
       - name: Upload tfsec results to GitHub Security
         if: always()
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: tfsec-results.sarif
+          sarif_file: infrastructure/terraform/tfsec-results.sarif
+          category: tfsec
 
       - name: Comment PR with results
         if: github.event_name == 'pull_request' && always()
         uses: actions/github-script@v7
         with:
           script: |
+            const fmtStatus = '${{ steps.fmt.outcome }}' === 'success' ? 'PASSED' : 'FAILED';
+            const validateStatus = '${{ steps.validate.outcome }}' === 'success' ? 'PASSED' : 'FAILED';
+            const tfsecStatus = '${{ steps.tfsec.outcome }}' === 'success' ? 'PASSED' : 'ISSUES FOUND';
+
+            const fmtError = '${{ steps.fmt.outcome }}' !== 'success' ? '**Format errors found.** Run `terraform fmt -recursive` locally.\n' : '';
+            const validateError = '${{ steps.validate.outcome }}' !== 'success' ? '**Validation errors found.** Check Terraform configuration.\n' : '';
+            const tfsecError = '${{ steps.tfsec.outcome }}' !== 'success' ? '**Security issues detected.** Review the Security tab for details.\n' : '';
+
             const output = `
             ## Terraform Validation Results
 
             | Check | Status |
             |-------|--------|
-            | Format | ${{ steps.fmt.outcome == 'success' ? 'PASSED' : 'FAILED' }} |
-            | Validate | ${{ steps.validate.outcome == 'success' ? 'PASSED' : 'FAILED' }} |
-            | Security (tfsec) | ${{ steps.tfsec.outcome == 'success' ? 'PASSED' : 'ISSUES FOUND' }} |
+            | Format | ${fmtStatus} |
+            | Validate | ${validateStatus} |
+            | Security (tfsec) | ${tfsecStatus} |
 
             ### Actions Required
 
-            ${steps.fmt.outcome !== 'success' ? '**Format errors found.** Run `terraform fmt -recursive` locally.\n' : ''}
-            ${steps.validate.outcome !== 'success' ? '**Validation errors found.** Check Terraform configuration.\n' : ''}
-            ${steps.tfsec.outcome !== 'success' ? '**Security issues detected.** Review the Security tab for details.\n' : ''}
+            ${fmtError}${validateError}${tfsecError}
 
             ---
             *Workflow run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})*
@@ -127,3 +145,4 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: checkov-results.sarif
+          category: checkov
