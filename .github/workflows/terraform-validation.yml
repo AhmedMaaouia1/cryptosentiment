@@ -60,14 +60,27 @@ jobs:
 
       - name: Run tfsec Security Scan
         id: tfsec
-        working-directory: infrastructure/terraform
         run: |
+          cd infrastructure/terraform
           if [ -f .tfsec.yml ]; then
-            tfsec . --format sarif --out ../../tfsec-results.sarif --config-file .tfsec.yml
+            tfsec . --format sarif --out $GITHUB_WORKSPACE/tfsec-results.sarif --config-file .tfsec.yml
           else
-            tfsec . --format sarif --out ../../tfsec-results.sarif --minimum-severity HIGH
+            tfsec . --format sarif --out $GITHUB_WORKSPACE/tfsec-results.sarif --minimum-severity HIGH
           fi
         continue-on-error: true
+
+      - name: Debug - List files
+        if: always()
+        run: |
+          echo "=== Files in workspace root ==="
+          ls -la
+          echo "=== Checking for tfsec-results.sarif ==="
+          if [ -f tfsec-results.sarif ]; then
+            echo "✓ tfsec-results.sarif found"
+            ls -lh tfsec-results.sarif
+          else
+            echo "✗ tfsec-results.sarif NOT found"
+          fi
 
       - name: Upload tfsec results to GitHub Security
         if: always()
