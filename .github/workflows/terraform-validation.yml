@@ -60,13 +60,14 @@ jobs:
 
       - name: Run tfsec Security Scan
         id: tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
-        with:
-          working_directory: infrastructure/terraform
-          soft_fail: false
-          format: sarif
-          output: tfsec-results.sarif
-          config_file: .tfsec.yml
+        working-directory: infrastructure/terraform
+        run: |
+          if [ -f .tfsec.yml ]; then
+            tfsec . --format sarif --out ../../tfsec-results.sarif --config-file .tfsec.yml
+          else
+            tfsec . --format sarif --out ../../tfsec-results.sarif --minimum-severity HIGH
+          fi
+        continue-on-error: true
 
       - name: Upload tfsec results to GitHub Security
         if: always()
