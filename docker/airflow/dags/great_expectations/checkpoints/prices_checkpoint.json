@@ -1,0 +1,8 @@
+{
+  "name": "prices_checkpoint",
+  "validations": [
+    {
+      "expectation_suite_name": "prices_expectation"
+    }
+  ]
+}

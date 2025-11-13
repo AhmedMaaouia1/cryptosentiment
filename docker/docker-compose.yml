@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+
   postgres:
     image: postgres:16
     environment:
@@ -14,38 +15,55 @@ services:
     image: redis:7
 
   airflow-webserver:
-    image: apache/airflow:2.9.0
+    build:
+      context: ./airflow
     restart: always
     env_file:
       - ../.env
     environment:
-      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__WEBSERVER__SECRET_KEY: "8ca7cb141e093d7280af4cf5b8f0cb90d261b621b496ffea5dd8970bbf53f4ac"
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__TEST_CONNECTION: "True"
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__LOGGING__REDIRECT_STDOUT: "True"
+      AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_LOG: "True"
+      AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_STDERR: "False"
+      AIRFLOW__SECRETS__BACKEND: "airflow.secrets.environment_variables.EnvironmentVariablesBackend"
+
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - "C:/Users/CYTech Student/.aws:/home/airflow/.aws:ro"
     ports:
       - "8080:8080"
     depends_on:
       - postgres
       - redis
+
     command: webserver
 
   airflow-scheduler:
-    image: apache/airflow:2.9.0
+    build:
+      context: ./airflow
     restart: always
     env_file:
       - ../.env
     environment:
-      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__WEBSERVER__SECRET_KEY: "8ca7cb141e093d7280af4cf5b8f0cb90d261b621b496ffea5dd8970bbf53f4ac"
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-      AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
-      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+      AIRFLOW__LOGGING__REDIRECT_STDOUT: "True"
+      AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_LOG: "True"
+      AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_STDERR: "False"
+      AIRFLOW__SECRETS__BACKEND: "airflow.secrets.environment_variables.EnvironmentVariablesBackend"
+
     volumes:
       - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - "C:/Users/CYTech Student/.aws:/home/airflow/.aws:ro"
     depends_on:
       - postgres
       - redis
+
     command: scheduler
