@@ -5,4 +5,4 @@ boto3
 requests
 pandas
 pyarrow
-great-expectations
+great_expectations==0.18.9

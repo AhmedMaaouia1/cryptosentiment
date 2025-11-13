@@ -38,3 +38,9 @@ checkov-results.sarif
 # OS
 .DS_Store
 Thumbs.db
+
+.env
+docker/airflow/logs/
+__pycache__/
+.pgdata/
+*.pyc
