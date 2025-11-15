@@ -1,0 +1,31 @@
+{
+  "dataset_type": "news",
+  "expectations": [
+    { "expectation_type": "expect_column_to_exist", "severity": "error", "kwargs": { "column": "title" }},
+    { "expectation_type": "expect_column_to_exist", "severity": "error", "kwargs": { "column": "description" }},
+    { "expectation_type": "expect_column_to_exist", "severity": "error", "kwargs": { "column": "url" }},
+    { "expectation_type": "expect_column_to_exist", "severity": "error", "kwargs": { "column": "source" }},
+    { "expectation_type": "expect_column_to_exist", "severity": "error", "kwargs": { "column": "publishedAt" }},
+    { "expectation_type": "expect_column_to_exist", "severity": "error", "kwargs": { "column": "fetched_at" }},
+
+    { "expectation_type": "expect_column_values_to_not_be_null", "severity": "error", "kwargs": { "column": "title" }},
+    { "expectation_type": "expect_column_values_to_not_be_null", "severity": "error", "kwargs": { "column": "url" }},
+    { "expectation_type": "expect_column_values_to_not_be_null", "severity": "error", "kwargs": { "column": "source" }},
+    { "expectation_type": "expect_column_values_to_not_be_null", "severity": "error", "kwargs": { "column": "publishedAt" }},
+    { "expectation_type": "expect_column_values_to_not_be_null", "severity": "error", "kwargs": { "column": "fetched_at" }},
+
+    { "expectation_type": "expect_column_value_lengths_to_be_between", "severity": "warning", "kwargs": { "column": "description", "min_value": 20 }},
+    { "expectation_type": "expect_column_value_lengths_to_be_between", "severity": "error", "kwargs": { "column": "title", "min_value": 5 }},
+    { "expectation_type": "expect_column_value_lengths_to_be_between", "severity": "error", "kwargs": { "column": "url", "min_value": 10 }},
+    { "expectation_type": "expect_column_value_lengths_to_be_between", "severity": "warning", "kwargs": { "column": "source", "min_value": 2 }},
+
+    { "expectation_type": "expect_column_values_to_match_regex", "severity": "error", "kwargs": { "column": "url", "regex": "^https?://.+$" }},
+
+    { "expectation_type": "expect_column_values_to_match_regex", "severity": "error", "kwargs": { "column": "publishedAt", "regex": "^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$" }},
+    { "expectation_type": "expect_column_values_to_match_regex", "severity": "warning", "kwargs": { "column": "fetched_at", "regex": "^\\d{4}-\\d{2}-\\d{2}T.*(Z|[+-]\\d{2}:\\d{2})$" }},
+
+    { "expectation_type": "expect_published_before_fetched", "severity": "error" },
+    { "expectation_type": "expect_no_future_dates", "severity": "error", "kwargs": { "column": "publishedAt" }},
+    { "expectation_type": "expect_no_duplicate_urls", "severity": "warning" }
+  ]
+}
