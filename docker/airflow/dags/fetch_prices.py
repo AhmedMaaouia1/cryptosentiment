@@ -84,8 +84,9 @@ def task_fetch_prices(**_):
         payload = fetch_cg_price(symbol)
 
         # Validation GE
-        if not run_ge_checkpoint("prices_checkpoint", [payload]):
-            raise ValueError(f"GE validation failed for {symbol}")
+        result = run_ge_checkpoint("prices_checkpoint", [payload])
+        if not result["success"]:
+            raise ValueError(f"GE validation failed for {symbol} (score={result['score']})")
 
         bucket, key = s3_path(symbol, ts)
         if s3_key_exists(s3, bucket, key):
