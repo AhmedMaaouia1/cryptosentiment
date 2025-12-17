@@ -5,7 +5,7 @@ Objectif :
   - Lire les dernières news brutes dans S3 (produites par fetch_news)
   - Appeler le modèle Hugging Face (twitter-roberta-base-sentiment)
   - Normaliser les scores et labels
-  - Sauvegarder les résultats dans DynamoDB (clé : asset + ts)
+  - Sauvegarder les résultats dans DynamoDB (clé : pk + sk)
 """
 
 # ==============================================================
@@ -157,38 +157,21 @@ def hf_analyze_sentiment(text: str) -> dict:
 # ==============================================================
 
 def make_ddb_keys(article: dict) -> tuple[str, str]:
-    """
-    Terraform a défini :
-
-      hash_key  = "asset"
-      range_key = "ts"
-
-    Donc :
-      asset = nom de la crypto extraite de l'article (fallback: 'unknown')
-      ts    = timestamp publiéAt + hash(url)
-    """
-
-    # Extraire asset depuis la source (ex: title "Bitcoin jumps...")
-    # -> version simple (améliorable plus tard)
-    title = (article.get("title") or "").lower()
-    asset = "unknown"
-    for coin in ("bitcoin", "btc", "eth", "ethereum"):
-        if coin in title:
-            asset = coin
-            break
-
     published_at = article.get("publishedAt") or utc_now().isoformat()
-    date_hash = hashlib.sha1(article.get("url", "").encode()).hexdigest()[:8]
+    date_part = published_at[:10]  # YYYY-MM-DD
 
-    ts = f"{published_at}#{date_hash}"
+    url = article.get("url", "")
+    url_hash = hashlib.sha1(url.encode()).hexdigest()[:8]
 
-    return asset, ts
+    pk = f"news#{date_part}"
+    sk = f"{published_at}#{url_hash}"
 
+    return pk, sk
 
 def upsert_sentiment_item(ddb, table_name: str, article: dict, sentiment: dict):
     """
-    Correct version — uses HIGH-LEVEL boto3 resource API (native dicts)
-    Compatible with Terraform table (asset + ts)
+        High-level boto3 resource API
+        Compatible with Terraform DYNAMODB_NEWS_TABLE (pk / sk)
     """
     table = ddb.Table(table_name)
 
@@ -197,8 +180,8 @@ def upsert_sentiment_item(ddb, table_name: str, article: dict, sentiment: dict):
 
     # DynamoDB high-level format = simple Python dict
     item = {
-        "asset": pk,          # <-- STRING, pas {"S": ...}
-        "ts": sk,             # <-- STRING
+        "pk": pk,
+        "sk": sk,
 
         "url": article.get("url", ""),
         "source": article.get("source", ""),
@@ -209,13 +192,13 @@ def upsert_sentiment_item(ddb, table_name: str, article: dict, sentiment: dict):
         "sentiment_score": decimal.Decimal(str(sentiment["sentiment_score"])),
         "label": sentiment["label"],
         "model": "cardiffnlp/twitter-roberta-base-sentiment",
-        "processed_at": now,
+        "processed_at": utc_now().isoformat(),
     }
 
     try:
         table.put_item(
             Item=item,
-            ConditionExpression="attribute_not_exists(asset) AND attribute_not_exists(ts)"
+            ConditionExpression="attribute_not_exists(pk) AND attribute_not_exists(sk)"
         )
         print(f"[DDB] ✅ Insert {pk} / {sk}")
 
@@ -231,10 +214,12 @@ def upsert_sentiment_item(ddb, table_name: str, article: dict, sentiment: dict):
 
 def task_analyze_sentiment(**context):
     _, ddb, _ = aws_clients()
-    table_name = env_var("DYNAMODB_TABLE")
+    table_name = env_var("DYNAMODB_NEWS_TABLE")
 
     bucket, key, articles = load_latest_news_batch()
-
+    if not articles:
+        print("[Sentiment] Aucun article à analyser.")
+        return
     count = 0
     for article in articles:
         if count >= MAX_NEWS_PER_RUN:
