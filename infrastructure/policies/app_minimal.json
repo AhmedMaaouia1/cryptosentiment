@@ -25,9 +25,7 @@
         "dynamodb:GetItem",
         "dynamodb:Query"
       ],
-      "Resource": [
-        "${dynamodb_arn}"
-      ]
+      "Resource": ${dynamodb_arns}
     },
     {
       "Sid": "SNSPublish",

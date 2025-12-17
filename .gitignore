@@ -13,6 +13,9 @@ airflow_home/
 *.log
 .env
 .env.*
+# Docker / local runtime data
+docker/pgdata/
+docker/airflow/logs/
 
 # Terraform
 *.tfstate

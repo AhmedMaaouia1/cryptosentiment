@@ -1,38 +1,39 @@
 # -------------------------
-# DYNAMODB TIMESERIES MODULE
+# DYNAMODB NEWS MODULE
 # -------------------------
-# Ce module crée une table DynamoDB pour stocker les données de timeseries
-# avec une clé de partition (asset) et une clé de tri (timestamp)
+# Table dédiée au stockage des news et du sentiment
+# Utilisée par le DAG analyze_sentiment
 
 locals {
-  table_name = "${var.project_prefix}-${var.environment}-timeseries"
+  table_name = "${var.project_prefix}-${var.environment}-news"
 }
 
-resource "aws_dynamodb_table" "timeseries" {
+resource "aws_dynamodb_table" "news" {
   # checkov:skip=CKV_AWS_28: PITR disabled intentionally to stay within free tier
   name         = local.table_name
+  billing_mode = var.billing_mode
   hash_key     = var.hash_key
   range_key    = var.range_key
-  billing_mode = var.billing_mode
 
-  # Attributs obligatoires pour les clés
+  # Partition key
   attribute {
     name = var.hash_key
-    type = "S" # String pour l'asset (ex: "BTC", "ETH")
+    type = "S"
   }
 
+  # Sort key
   attribute {
     name = var.range_key
     type = "S"
   }
 
-  # encryption at rest
+  # Encryption at rest (AWS managed key)
   server_side_encryption {
     enabled     = true
-    kms_key_arn = null # Utilise la clé AWS par défaut
+    kms_key_arn = null
   }
 
-  # Configuration TTL pour expiration automatique
+  # TTL optionnel
   dynamic "ttl" {
     for_each = var.ttl_enabled ? [1] : []
     content {
@@ -41,22 +42,21 @@ resource "aws_dynamodb_table" "timeseries" {
     }
   }
 
-  # Restauration point-in-time (backup continu)
+  # Point-in-time recovery (optionnel)
   point_in_time_recovery {
     enabled = var.point_in_time_recovery
   }
 
-  # Protection contre la suppression accidentelle
+  # Protection contre suppression accidentelle
   deletion_protection_enabled = var.deletion_protection
 
-  # Tags
   tags = merge(
     var.tags,
     {
       Name        = local.table_name
       Environment = var.environment
       ManagedBy   = "Terraform"
-      Module      = "dynamodb_timeseries"
+      Module      = "dynamodb_news"
     }
   )
 }

@@ -46,6 +46,28 @@ module "dynamodb_timeseries" {
 }
 
 # -------------------------
+# DYNAMODB NEWS (MODULE)
+# -------------------------
+module "dynamodb_news" {
+  source = "../modules/dynamodb_news"
+
+  project_prefix         = var.project_prefix
+  environment            = var.environment
+  billing_mode           = var.ddb_billing_mode
+  hash_key               = "pk"
+  range_key              = "sk"
+  ttl_enabled            = true
+  ttl_attribute_name     = "ttl"
+  point_in_time_recovery = false
+  deletion_protection    = false
+
+  tags = {
+    Project = "CryptoSentiment"
+  }
+}
+
+
+# -------------------------
 # SNS ALERTS (MODULE)
 # -------------------------
 module "sns_alerts" {
@@ -72,11 +94,14 @@ module "sns_alerts" {
 module "iam_app_policy" {
   source = "../modules/iam_app_policy"
 
-  project_prefix                = var.project_prefix
-  environment                   = var.environment
-  policy_file_path              = "${path.module}/../policies/app_minimal.json"
-  s3_bucket_arn                 = module.s3_datalake.bucket_arn
-  dynamodb_table_arn            = module.dynamodb_timeseries.table_arn
+  project_prefix   = var.project_prefix
+  environment      = var.environment
+  policy_file_path = "${path.module}/../policies/app_minimal.json"
+  s3_bucket_arn    = module.s3_datalake.bucket_arn
+  dynamodb_table_arns = [
+    module.dynamodb_timeseries.table_arn,
+    module.dynamodb_news.table_arn
+  ]
   sns_topic_arn                 = module.sns_alerts.topic_arn
   attach_to_airflow_user        = var.attach_iam_locally
   airflow_user_name             = "airflow-user"

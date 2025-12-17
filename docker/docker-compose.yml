@@ -1,7 +1,5 @@
 version: "3.9"
-
 services:
-
   postgres:
     image: postgres:16
     environment:
@@ -10,10 +8,8 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - ./pgdata:/var/lib/postgresql/data
-
   redis:
     image: redis:7
-
   airflow-webserver:
     build:
       context: ./airflow
@@ -30,7 +26,6 @@ services:
       AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_LOG: "True"
       AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_STDERR: "False"
       AIRFLOW__SECRETS__BACKEND: "airflow.secrets.environment_variables.EnvironmentVariablesBackend"
-
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -40,9 +35,7 @@ services:
     depends_on:
       - postgres
       - redis
-
     command: webserver
-
   airflow-scheduler:
     build:
       context: ./airflow
@@ -57,7 +50,6 @@ services:
       AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_LOG: "True"
       AIRFLOW__LOGGING__REDIRECT_STDOUT_TO_STDERR: "False"
       AIRFLOW__SECRETS__BACKEND: "airflow.secrets.environment_variables.EnvironmentVariablesBackend"
-
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -65,5 +57,4 @@ services:
     depends_on:
       - postgres
       - redis
-
     command: scheduler

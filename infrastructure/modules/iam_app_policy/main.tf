@@ -16,7 +16,7 @@ locals {
         local.policy_template,
         "$${bucket_arn}", var.s3_bucket_arn
       ),
-      "$${dynamodb_arn}", var.dynamodb_table_arn
+      "$${dynamodb_arns}", jsonencode(var.dynamodb_table_arns)
     ),
     "$${sns_arn}", var.sns_topic_arn
   )
@@ -48,6 +48,7 @@ data "aws_iam_user" "airflow" {
 }
 
 resource "aws_iam_user_policy_attachment" "airflow_attach" {
+  # checkov:skip=CKV_AWS_40: User attachment is intentional for local Airflow development
   count = var.attach_to_airflow_user ? 1 : 0
 
   user       = data.aws_iam_user.airflow[0].user_name
