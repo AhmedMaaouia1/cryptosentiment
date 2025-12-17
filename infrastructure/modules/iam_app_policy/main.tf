@@ -48,6 +48,7 @@ data "aws_iam_user" "airflow" {
 }
 
 resource "aws_iam_user_policy_attachment" "airflow_attach" {
+  # checkov:skip=CKV_AWS_40: User attachment is intentional for local Airflow development
   count = var.attach_to_airflow_user ? 1 : 0
 
   user       = data.aws_iam_user.airflow[0].user_name

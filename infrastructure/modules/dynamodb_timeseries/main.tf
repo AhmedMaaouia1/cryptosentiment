@@ -9,6 +9,7 @@ locals {
 }
 
 resource "aws_dynamodb_table" "timeseries" {
+  # checkov:skip=CKV_AWS_28: PITR disabled intentionally to stay within free tier
   name         = local.table_name
   hash_key     = var.hash_key
   range_key    = var.range_key

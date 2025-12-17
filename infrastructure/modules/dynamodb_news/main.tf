@@ -9,6 +9,7 @@ locals {
 }
 
 resource "aws_dynamodb_table" "news" {
+  # checkov:skip=CKV_AWS_28: PITR disabled intentionally to stay within free tier
   name         = local.table_name
   billing_mode = var.billing_mode
   hash_key     = var.hash_key
