@@ -3,9 +3,14 @@ output "s3_datalake_bucket_name" {
   description = "Nom du bucket S3 datalake"
 }
 
-output "dynamodb_table_name" {
+output "dynamodb_prices_table_name" {
+  description = "Nom de la table DynamoDB des prix crypto"
   value       = module.dynamodb_timeseries.table_name
-  description = "Nom de la table DDB timeseries"
+}
+
+output "dynamodb_news_table_name" {
+  description = "Nom de la table DynamoDB des news et sentiments"
+  value       = module.dynamodb_news.table_name
 }
 
 output "sns_topic_arn" {

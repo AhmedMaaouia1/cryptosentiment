@@ -66,21 +66,22 @@ function Invoke-Check {
 
 function Invoke-Plan {
     Write-Host "Running Terraform plan..." -ForegroundColor Yellow
-    terraform plan -var-file=terraform.tfvars
+    terraform plan
     Write-Host "Plan complete" -ForegroundColor Green
 }
 
 function Invoke-Apply {
     Write-Host "Applying Terraform configuration..." -ForegroundColor Yellow
-    terraform apply -var-file=terraform.tfvars
+    terraform apply
     Write-Host "Apply complete" -ForegroundColor Green
 }
+
 
 function Invoke-Destroy {
     Write-Host "WARNING: This will destroy all resources!" -ForegroundColor Red
     $confirm = Read-Host "Are you sure? [y/N]"
     if ($confirm -eq 'y' -or $confirm -eq 'Y') {
-        terraform destroy -var-file=terraform.tfvars
+        terraform destroy
     } else {
         Write-Host "Destroy cancelled" -ForegroundColor Yellow
     }

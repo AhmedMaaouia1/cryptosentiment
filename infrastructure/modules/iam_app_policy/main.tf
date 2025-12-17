@@ -16,7 +16,7 @@ locals {
         local.policy_template,
         "$${bucket_arn}", var.s3_bucket_arn
       ),
-      "$${dynamodb_arn}", var.dynamodb_table_arn
+      "$${dynamodb_arns}", jsonencode(var.dynamodb_table_arns)
     ),
     "$${sns_arn}", var.sns_topic_arn
   )

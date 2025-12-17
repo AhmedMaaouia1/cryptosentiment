@@ -17,6 +17,12 @@ variable "aws_region" {
 }
 
 # --- DynamoDB ---
+variable "dynamodb_table_arns" {
+  description = "Liste des ARN DynamoDB accessibles par l'application"
+  type        = list(string)
+  default     = []
+}
+
 variable "ddb_billing_mode" {
   description = "Mode de facturation DDB (PROVISIONED|PAY_PER_REQUEST)"
   type        = string
