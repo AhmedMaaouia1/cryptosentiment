@@ -18,9 +18,9 @@ variable "s3_bucket_arn" {
   type        = string
 }
 
-variable "dynamodb_table_arn" {
-  description = "ARN de la table DynamoDB à inclure dans la policy"
-  type        = string
+variable "dynamodb_table_arns" {
+  description = "Liste des ARNs des tables DynamoDB accessibles par l'application"
+  type        = list(string)
 }
 
 variable "sns_topic_arn" {
