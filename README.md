@@ -283,13 +283,13 @@ cryptosentiment/
 
 ## 🎯 Pourquoi ce Projet se Démarque
 
-### Pour les Recruteurs Data Engineering
+### Data Engineering
 - **Production-ready** : Architecture modulaire, sécurité par défaut, monitoring
 - **Best practices** : DevSecOps, IaC, validation automatique, documentation complète
 - **Scalable** : Modules réutilisables, multi-environnements (dev/staging/prod)
 - **Cost-efficient** : 0€ d'infrastructure, optimisation Free Tier
 
-### Pour les Recruteurs DevOps/Cloud
+### DevOps/Cloud
 - **Security-first** : 0 vulnérabilités, encryption partout, OIDC sans clés
 - **Automation** : CI/CD complet, pre-commit hooks, scripts cross-platform
 - **Infrastructure as Code** : Terraform modulaire, state distant, locking
@@ -310,7 +310,7 @@ cryptosentiment/
 - 📧 LinkedIn : [ahmed-maaouia](https://www.linkedin.com/in/ahmed-maaouia/)
 - 💼 Portfolio : [Ce projet démontre](https://github.com/AhmedMaaouia1/cryptosentiment)
 
-> Ouvert aux opportunités : Stage / Alternance / Junior Position en Data Engineering, Cloud ou DevOps
+> Ouvert aux opportunités
 
 ---
 
